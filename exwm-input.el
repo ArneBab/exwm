@@ -664,8 +664,17 @@ Current buffer must be an `exwm-mode' buffer."
 (defun exwm-input--fake-last-command ()
   "Fool some packages into thinking there is a change in the buffer."
   (setq last-command #'exwm-input--noop)
-  (run-hooks 'pre-command-hook)
-  (run-hooks 'post-command-hook))
+  (condition-case hook-error
+      (progn
+        (run-hooks 'pre-command-hook)
+        (run-hooks 'post-command-hook))
+    ((error)
+     (exwm--log "Error occurred while running command hooks: %s\n\nBacktrace:\n\n%s"
+                hook-error
+                (with-temp-buffer
+                  (setq-local standard-output (current-buffer))
+                  (backtrace)
+                  (buffer-string))))))
 
 (defun exwm-input--on-KeyPress-line-mode (key-press raw-data)
   "Parse X KeyPress event to Emacs key event and then feed the command loop."
